@@ -1,0 +1,378 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Тренажер Вектори</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700&family=Unbounded:wght@600;700&display=swap">
+<style>
+/* Layout: одна задача на екрані, зверху рівні й прогрес, знизу картка із завданням. Палітра: небо, синє чорнило, жовта плашка, червоний вектор. */
+:root{
+  --bg:#EEF5FD; --card:#FFFFFF; --ink:#14264A; --muted:#51617F; --line:#D5E1F2;
+  --blue:#2F6FDB; --blue-soft:#E3EEFE; --yellow:#FFC93C; --yellow-ink:#4A3600;
+  --red:#D7352A; --red-soft:#FDE8E6; --green:#1B8F55; --green-soft:#E1F5EA; --amber-soft:#FFF3CF;
+  --c1:#D9E8FF; --c2:#FFE9A8; --c3:#CDEFDC; --c4:#FAD2D0;
+  --display:'Unbounded','Onest',system-ui,sans-serif; --body:'Onest',system-ui,-apple-system,'Segoe UI',sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0E1A33; --card:#162645; --ink:#E9EFFB; --muted:#9DB0D3; --line:#2A3C61;
+  --blue:#6FA0FF; --blue-soft:#1E3260; --yellow:#FFC93C; --yellow-ink:#FFE9A8;
+  --red:#FF7A6E; --red-soft:#4A2328; --green:#4FD08B; --green-soft:#17402F; --amber-soft:#4A3E16; --c1:#24407A; --c2:#5A4A12; --c3:#1C4A36; --c4:#5A2A30; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0E1A33; --card:#162645; --ink:#E9EFFB; --muted:#9DB0D3; --line:#2A3C61;
+  --blue:#6FA0FF; --blue-soft:#1E3260; --yellow:#FFC93C; --yellow-ink:#FFE9A8;
+  --red:#FF7A6E; --red-soft:#4A2328; --green:#4FD08B; --green-soft:#17402F; --amber-soft:#4A3E16; --c1:#24407A; --c2:#5A4A12; --c3:#1C4A36; --c4:#5A2A30; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.65 var(--body);
+  padding-block:20px 40px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:540px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+header{display:flex;flex-direction:column;gap:6px}
+.kicker{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600}
+h1{font:700 clamp(24px,5vw,34px)/1.15 var(--display);margin:0;text-wrap:balance}
+h1 .acc{background:var(--yellow);color:#14264A;padding:0 .25em;border-radius:6px}
+.stats{display:flex;flex-wrap:wrap;gap:8px 18px;font-size:14px;color:var(--muted)}
+.stats b{color:var(--ink);font-variant-numeric:tabular-nums}
+.bar{height:8px;background:var(--line);border-radius:99px;overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--blue);border-radius:99px;transition:width .3s}
+
+.levels{display:grid;grid-template-columns:repeat(2,minmax(0,250px));gap:8px;justify-content:center}
+.lv{min-width:0;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:5px 12px;cursor:pointer;text-align:left;font:inherit;color:inherit}
+.lv:nth-child(1){background:var(--c1)}.lv:nth-child(2){background:var(--c2)}.lv:nth-child(3){background:var(--c3)}.lv:nth-child(4){background:var(--c4)}
+.lv .n{display:block;font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.lv .t{display:block;font-weight:600;font-size:17px;line-height:1.3}
+.lv[aria-current="true"]{border-color:var(--blue);box-shadow:0 0 0 2px var(--blue)}
+.dots{display:flex;flex-wrap:wrap;gap:6px}
+.dot{width:22px;height:22px;border-radius:7px;border:1px solid var(--line);background:var(--card);color:var(--muted);font:600 12px var(--body);cursor:pointer;padding:0;font-variant-numeric:tabular-nums}
+.dot.cur{outline:2px solid var(--blue);outline-offset:1px}
+.dot.first{background:var(--green);border-color:var(--green);color:#fff}
+.dot.later{background:var(--yellow);border-color:var(--yellow);color:#14264A}
+.dot.shown{background:var(--red);border-color:var(--red);color:#fff}
+.dots .gap{width:10px}
+
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:20px;display:flex;flex-direction:column;gap:16px}
+.meta{display:flex;justify-content:space-between;gap:8px;font-size:13px;color:var(--muted);font-weight:600}
+.q{font-size:18px;line-height:1.75;margin:0;text-wrap:pretty}
+.nw{white-space:nowrap}
+.v{position:relative;display:inline-block;font-style:italic;font-weight:600;padding-top:.05em}
+.v::before{content:"→";position:absolute;left:0;right:0;top:-.72em;text-align:center;font-size:.72em;line-height:1;font-style:normal}
+.opts{display:flex;flex-direction:column;gap:8px}
+.opt{display:flex;gap:10px;align-items:flex-start;text-align:left;font:inherit;color:inherit;background:var(--card);border:1.5px solid var(--line);border-radius:12px;padding:10px 14px;cursor:pointer;line-height:1.5}
+.opt:hover:not(:disabled){border-color:var(--blue)}
+.opt .k{flex:none;width:24px;height:24px;border-radius:50%;background:var(--blue-soft);color:var(--blue);font-weight:700;font-size:13px;display:grid;place-items:center;margin-top:1px}
+.opt.sel{border-color:var(--blue);background:var(--blue-soft)}
+.opt.good{border-color:var(--green);background:var(--green-soft)}
+.opt.bad{border-color:var(--red);background:var(--red-soft)}
+.opt:disabled{cursor:default}
+.ans{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:18px}
+.ans input{width:96px;font:600 18px var(--body);color:var(--ink);background:var(--card);border:1.5px solid var(--line);border-radius:10px;padding:8px 10px;text-align:center}
+.ans input:focus-visible{outline:2px solid var(--blue);border-color:var(--blue)}
+.ans input.good{border-color:var(--green);background:var(--green-soft)}
+.ans input.bad{border-color:var(--red);background:var(--red-soft)}
+.ans .sep{font-weight:700}
+.ans .lbl{color:var(--muted)}
+.btns{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+button.b{font:600 15px var(--body);border-radius:10px;padding:10px 16px;border:1.5px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer}
+button.b:focus-visible,.opt:focus-visible,.lv:focus-visible,.dot:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+button.main{background:var(--blue);border-color:var(--blue);color:#fff}
+[data-theme="dark"] button.main{color:#0E1A33}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) button.main{color:#0E1A33}}
+button.b:disabled{opacity:.5;cursor:default}
+.fb{border-radius:12px;padding:12px 14px;font-size:15px;line-height:1.6}
+.fb.ok{background:var(--green-soft)}
+.fb.no{background:var(--red-soft)}
+.fb.hint{background:var(--amber-soft)}
+.fb b{display:block;margin-bottom:2px}
+.exp{color:var(--ink)}
+details{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:0 16px}
+summary{cursor:pointer;padding:12px 0;font-weight:600}
+.cheat{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:8px 24px;padding-bottom:14px;font-size:15px}
+.cheat div{min-width:0}
+.cheat .h{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.06em;font-weight:600}
+.done{background:var(--blue-soft);border-radius:14px;padding:14px 16px}
+.done h2{font:700 18px var(--display);margin:0 0 4px}
+@media (prefers-reduced-motion:reduce){.bar i{transition:none}}
+</style>
+
+<div class="wrap">
+  <header>
+    <span class="kicker">Геометрія · 9 клас · за підручником Істера</span>
+    <h1>Тренажер <span class="acc">Вектори</span></h1>
+    <div class="stats" id="stats"></div>
+  </header>
+
+  <details>
+    <summary>Шпаргалка з формулами</summary>
+    <div class="cheat" id="cheat"></div>
+  </details>
+
+  <nav class="levels" id="levels" aria-label="Рівні"></nav>
+  
+  <main class="card" id="card" aria-live="polite"></main>
+  <div id="final"></div>
+</div>
+
+<script>
+(function(){
+  var fmt=function(s){return String(s).replace(/([|(−\-\dk]*)\{([^}]+)\}([|)?.,;:]*)/g,'<span class="nw">$1<span class="v">$2</span>$3</span>')};
+  var LEVELS=[
+    {id:1,name:'Координати вектора'},{id:2,name:'Дії з векторами'},
+    {id:3,name:'Скалярний добуток'},{id:4,name:'Тест фінальний'}];
+
+  var T=[];
+  function buildOnce(seed){
+    var rs=seed>>>0;
+    function rnd(){rs|=0;rs=rs+0x6D2B79F5|0;var t=Math.imul(rs^rs>>>15,1|rs);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}
+    var ri=function(a,b){return a+Math.floor(rnd()*(b-a+1))};
+    var pick=function(a){return a[Math.floor(rnd()*a.length)]};
+    var nz=function(a,b){var v;do{v=ri(a,b)}while(v===0);return v};
+    var N=function(x){return String(x).replace('-','−').replace('.',',')};
+    var P=function(x){return x<0?'('+N(x)+')':N(x)};
+    var C=function(x,y){return '('+N(x)+'; '+N(y)+')'};
+    var pt=function(){return [ri(-5,5),ri(-5,5)]};
+    var plus=function(k){return k<0?'− '+(-k):'+ '+k};
+    var out=[];
+    var add=function(o){out.push(o)};
+    var OPT4=['Перпендикулярні','Співнапрямлені','Протилежно напрямлені','Рівні'];
+
+    // Рівень 2: координати
+    var A,B,d,k,m,n,tr,sg;
+    function two(){A=pt();do{d=[ri(-6,6),ri(-6,6)]}while(d[0]===0&&d[1]===0);B=[A[0]+d[0],A[1]+d[1]]}
+    two();
+    add({lv:1,type:'pair',q:'Точки A'+C(A[0],A[1])+' і B'+C(B[0],B[1])+'. Знайдіть координати вектора {AB}.',ans:d,
+      hint:'Від координат кінця відніміть координати початку.',exp:'{AB} = ('+N(B[0])+' − '+P(A[0])+'; '+N(B[1])+' − '+P(A[1])+') = '+C(d[0],d[1])+'.'});
+    two();
+    add({lv:1,type:'pair',q:'Точки A'+C(A[0],A[1])+' і B'+C(B[0],B[1])+'. Знайдіть координати вектора {BA}.',ans:[-d[0],-d[1]],
+      hint:'Тепер початок — точка B, а кінець — точка A.',exp:'{BA} = ('+N(A[0])+' − '+P(B[0])+'; '+N(A[1])+' − '+P(B[1])+') = '+C(-d[0],-d[1])+'.'});
+    d=[nz(-7,7),nz(-7,7)];
+    add({lv:1,type:'pair',q:'Вектор {AB}'+C(d[0],d[1])+'. Знайдіть координати вектора {BA}.',ans:[-d[0],-d[1]],
+      hint:'Вектори {AB} і {BA} протилежні.',exp:'{BA} = −{AB}: змінюємо знак кожної координати. {BA} = '+C(-d[0],-d[1])+'.'});
+    two();
+    add({lv:1,type:'pair',q:'Вектор {AB}'+C(d[0],d[1])+', точка A'+C(A[0],A[1])+'. Знайдіть координати точки B.',ans:B,
+      hint:'Координати кінця дорівнюють координатам початку плюс координати вектора.',exp:'B = ('+N(A[0])+' + '+P(d[0])+'; '+N(A[1])+' + '+P(d[1])+') = '+C(B[0],B[1])+'.'});
+    two();
+    add({lv:1,type:'pair',q:'Вектор {AB}'+C(d[0],d[1])+', точка B'+C(B[0],B[1])+'. Знайдіть координати точки A.',ans:A,
+      hint:'Координати початку дорівнюють координатам кінця мінус координати вектора.',exp:'A = ('+N(B[0])+' − '+P(d[0])+'; '+N(B[1])+' − '+P(d[1])+') = '+C(A[0],A[1])+'.'});
+    tr=pick([[3,4,5],[6,8,10],[5,12,13],[8,15,17]]);sg=[pick([-1,1]),pick([-1,1])];if(rnd()<.5)tr=[tr[1],tr[0],tr[2]];
+    add({lv:1,type:'num',q:'Вектор {a}'+C(sg[0]*tr[0],sg[1]*tr[1])+'. Знайдіть його довжину |{a}|.',ans:tr[2],
+      hint:'|{a}| = √(x² + y²).',exp:'|{a}| = √('+tr[0]+'² + '+tr[1]+'²) = √'+(tr[0]*tr[0]+tr[1]*tr[1])+' = '+tr[2]+'.'});
+    tr=pick([[3,4,5],[6,8,10],[5,12,13],[8,15,17]]);sg=[pick([-1,1]),pick([-1,1])];A=pt();B=[A[0]+sg[0]*tr[0],A[1]+sg[1]*tr[1]];
+    add({lv:1,type:'num',q:'Точки A'+C(A[0],A[1])+' і B'+C(B[0],B[1])+'. Знайдіть довжину вектора {AB}.',ans:tr[2],
+      hint:'Спочатку знайдіть координати {AB}, потім довжину.',exp:'{AB} = '+C(sg[0]*tr[0],sg[1]*tr[1])+', |{AB}| = √('+tr[0]+'² + '+tr[1]+'²) = '+tr[2]+'.'});
+    k=nz(-4,4);m=ri(-5,5);n=ri(-5,8);
+    add({lv:1,type:'num',q:'Знайдіть x, якщо вектори {a}(x '+plus(k)+'; '+N(m)+') і {b}('+N(n)+'; '+N(m)+') рівні.',ans:n-k,
+      hint:'Рівні вектори мають рівні відповідні координати.',exp:'x '+plus(k)+' = '+N(n)+', отже x = '+N(n-k)+'.'});
+
+    // Рівень 3: дії
+    var a1,a2,b1,b2;
+    var rv=function(){a1=ri(-5,5);a2=ri(-5,5);b1=ri(-5,5);b2=ri(-5,5)};
+    rv();add({lv:2,type:'pair',q:'Вектори {a}'+C(a1,a2)+' і {b}'+C(b1,b2)+'. Знайдіть {a} + {b}.',ans:[a1+b1,a2+b2],
+      hint:'Додайте відповідні координати.',exp:'{a} + {b} = ('+N(a1)+' + '+P(b1)+'; '+N(a2)+' + '+P(b2)+') = '+C(a1+b1,a2+b2)+'.'});
+    rv();add({lv:2,type:'pair',q:'Вектори {a}'+C(a1,a2)+' і {b}'+C(b1,b2)+'. Знайдіть {a} − {b}.',ans:[a1-b1,a2-b2],
+      hint:'Віднімайте відповідні координати.',exp:'{a} − {b} = ('+N(a1)+' − '+P(b1)+'; '+N(a2)+' − '+P(b2)+') = '+C(a1-b1,a2-b2)+'.'});
+    rv();k=pick([-3,-2,2,3,4]);
+    add({lv:2,type:'pair',q:'Вектор {a}'+C(a1,a2)+'. Знайдіть '+N(k)+'{a}.',ans:[k*a1,k*a2],
+      hint:'Помножте кожну координату на '+N(k)+'.',exp:N(k)+'{a} = ('+N(k)+'·'+P(a1)+'; '+N(k)+'·'+P(a2)+') = '+C(k*a1,k*a2)+'.'});
+    rv();k=pick([2,3]);
+    add({lv:2,type:'pair',q:'Вектори {a}'+C(a1,a2)+' і {b}'+C(b1,b2)+'. Знайдіть '+k+'{a} − {b}.',ans:[k*a1-b1,k*a2-b2],
+      hint:'Спочатку знайдіть '+k+'{a}, потім відніміть {b}.',exp:k+'{a} = '+C(k*a1,k*a2)+'. Тоді '+k+'{a} − {b} = ('+N(k*a1)+' − '+P(b1)+'; '+N(k*a2)+' − '+P(b2)+') = '+C(k*a1-b1,k*a2-b2)+'.'});
+    add({lv:2,type:'choice',q:'Чому дорівнює {AB} + {BC}?',opts:['{AC}','{CA}','{BA}','{AB} − {BC}'],ans:0,
+      hint:'Правило трикутника: кінець першого вектора є початком другого.',exp:'За правилом трикутника {AB} + {BC} = {AC}.'});
+    add({lv:2,type:'choice',q:'Чому дорівнює {AB} + {BA}?',opts:['Нульовий вектор','2{AB}','{AB}','Не можна визначити'],ans:0,
+      hint:'Вектори протилежні. Куди прийдемо, пройшовши туди й назад?',exp:'{AB} + {BA} = {AB} + (−{AB}) = нульовий вектор.'});
+    add({lv:2,type:'choice',q:'ABCD — паралелограм. Чому дорівнює {AB} + {AD}?',opts:['{AC}','{BD}','{DB}','{CA}'],ans:0,
+      hint:'Правило паралелограма: сума — діагональ, що виходить зі спільного початку.',exp:'Вектори {AB} і {AD} виходять із точки A, їх сума — діагональ {AC}.'});
+    k=pick([-4,-3,-2,2,3,4]);m=ri(2,7);
+    add({lv:2,type:'num',q:'Довжина вектора {a} дорівнює '+m+'. Яка довжина вектора '+N(k)+'{a}?',ans:Math.abs(k)*m,
+      hint:'|k{a}| = |k|·|{a}|.',exp:'|'+N(k)+'{a}| = |'+N(k)+'|·'+m+' = '+Math.abs(k)*m+'.'});
+
+    // Рівень 4: скалярний добуток
+    var dot=function(){rv();return a1*b1+a2*b2};
+    var dd=dot();
+    add({lv:3,type:'num',q:'Вектори {a}'+C(a1,a2)+' і {b}'+C(b1,b2)+'. Знайдіть скалярний добуток {a}·{b}.',ans:dd,
+      hint:'{a}·{b} = x₁x₂ + y₁y₂.',exp:'{a}·{b} = '+N(a1)+'·'+P(b1)+' + '+N(a2)+'·'+P(b2)+' = '+N(dd)+'.'});
+    var p=nz(-4,4),q=nz(-4,4),t=pick([1,2,3]);
+    add({lv:3,type:'choice',q:'Вектори {a}'+C(p,q)+' і {b}'+C(t*q,-t*p)+'. Як вони розташовані?',opts:OPT4,ans:0,
+      hint:'Знайдіть скалярний добуток. Що означає нуль?',exp:'{a}·{b} = '+N(p)+'·'+P(t*q)+' + '+N(q)+'·'+P(-t*p)+' = 0, отже {a} ⊥ {b}.'});
+    var an=pick([[60,0.5],[120,-0.5],[90,0],[180,-1],[0,1]]),la=ri(2,6),lb=ri(2,6);
+    add({lv:3,type:'num',q:'|{a}| = '+la+', |{b}| = '+lb+', кут між векторами '+an[0]+'°. Знайдіть {a}·{b}.',ans:la*lb*an[1],
+      hint:'{a}·{b} = |{a}|·|{b}|·cos α, cos '+an[0]+'° = '+N(an[1])+'.',exp:'{a}·{b} = '+la+'·'+lb+'·'+P(an[1])+' = '+N(la*lb*an[1])+'.'});
+    A=pt();B=pt();var Cc=pt();var u=[B[0]-A[0],B[1]-A[1]],w=[Cc[0]-A[0],Cc[1]-A[1]];
+    add({lv:3,type:'num',q:'Точки A'+C(A[0],A[1])+', B'+C(B[0],B[1])+', C'+C(Cc[0],Cc[1])+'. Знайдіть {AB}·{AC}.',ans:u[0]*w[0]+u[1]*w[1],
+      hint:'Спочатку знайдіть координати {AB} і {AC} від точки A.',exp:'{AB} = '+C(u[0],u[1])+', {AC} = '+C(w[0],w[1])+'. {AB}·{AC} = '+N(u[0]*w[0]+u[1]*w[1])+'.'});
+    add({lv:3,type:'choice',q:'Скалярний добуток ненульових векторів {a} і {b} додатний. Який кут між ними?',opts:['Менший від 90°','Більший за 90°','Дорівнює 90°','Дорівнює 180°'],ans:0,
+      hint:'{a}·{b} = |{a}|·|{b}|·cos α. Коли cos α > 0?',exp:'Довжини додатні, тож знак добутку збігається зі знаком cos α. cos α > 0 при α < 90°.'});
+    var dd2=dot();
+    add({lv:3,type:'num',q:'Вектори {a}'+C(a1,a2)+' і {b}'+C(b1,b2)+'. Знайдіть {a}·{b}.',ans:dd2,
+      hint:'{a}·{b} = x₁x₂ + y₁y₂.',exp:'{a}·{b} = '+N(a1)+'·'+P(b1)+' + '+N(a2)+'·'+P(b2)+' = '+N(dd2)+'.'});
+
+    // Рівень 5: змішані
+    var x0=nz(-5,5),q2=nz(-4,4),t2=pick([1,2,3]);
+    add({lv:4,type:'num',q:'Знайдіть x, якщо вектори {a}(x; '+N(q2)+') і {b}'+C(t2*q2,-t2*x0)+' перпендикулярні.',ans:x0,
+      hint:'Перпендикулярні вектори мають скалярний добуток 0.',exp:'x·'+P(t2*q2)+' + '+N(q2)+'·'+P(-t2*x0)+' = 0, звідси x = '+N(x0)+'.'});
+    var pp=nz(-4,4),qq=nz(-4,4);k=pick([-3,-2,2,3]);
+    add({lv:4,type:'num',q:'Знайдіть x, якщо вектори {a}'+C(pp,qq)+' і {b}(x; '+N(k*qq)+') колінеарні.',ans:k*pp,
+      hint:'{b} = k·{a}. Знайдіть k з других координат.',exp:N(k*qq)+' = k·'+P(qq)+', k = '+N(k)+'. Тоді x = '+N(k)+'·'+P(pp)+' = '+N(k*pp)+'.'});
+    A=pt();B=pt();Cc=pt();u=[B[0]-A[0],B[1]-A[1]];w=[Cc[0]-A[0],Cc[1]-A[1]];
+    add({lv:4,type:'pair',q:'Точки A'+C(A[0],A[1])+', B'+C(B[0],B[1])+', C'+C(Cc[0],Cc[1])+'. Знайдіть координати вектора {AB} + {AC}.',ans:[u[0]+w[0],u[1]+w[1]],
+      hint:'Спочатку знайдіть {AB} і {AC} окремо.',exp:'{AB} = '+C(u[0],u[1])+', {AC} = '+C(w[0],w[1])+'. Сума: '+C(u[0]+w[0],u[1]+w[1])+'.'});
+    A=pt();B=pt();Cc=pt();
+    add({lv:4,type:'pair',q:'Точки A'+C(A[0],A[1])+', B'+C(B[0],B[1])+', C'+C(Cc[0],Cc[1])+'. Знайдіть координати вектора {AB} + {BC}.',ans:[Cc[0]-A[0],Cc[1]-A[1]],
+      hint:'За правилом трикутника {AB} + {BC} = {AC}.',exp:'{AB} + {BC} = {AC} = ('+N(Cc[0])+' − '+P(A[0])+'; '+N(Cc[1])+' − '+P(A[1])+') = '+C(Cc[0]-A[0],Cc[1]-A[1])+'.'});
+    tr=pick([[3,4,5],[6,8,10],[5,12,13]]);sg=[pick([-1,1]),pick([-1,1])];rv();
+    var sx=sg[0]*tr[0],sy=sg[1]*tr[1];b1=sx-a1;b2=sy-a2;
+    add({lv:4,type:'num',q:'Вектори {a}'+C(a1,a2)+' і {b}'+C(b1,b2)+'. Знайдіть довжину вектора {a} + {b}.',ans:tr[2],
+      hint:'Спочатку знайдіть суму, потім її довжину.',exp:'{a} + {b} = '+C(sx,sy)+', |{a} + {b}| = √('+tr[0]+'² + '+tr[1]+'²) = '+tr[2]+'.'});
+    tr=pick([[3,4,5],[6,8,10],[5,12,13]]);sg=[pick([-1,1]),pick([-1,1])];rv();
+    sx=sg[0]*tr[0];sy=sg[1]*tr[1];b1=2*a1-sx;b2=2*a2-sy;
+    add({lv:4,type:'num',q:'Вектори {a}'+C(a1,a2)+' і {b}'+C(b1,b2)+'. Знайдіть довжину вектора 2{a} − {b}.',ans:tr[2],
+      hint:'Спочатку знайдіть координати 2{a} − {b}.',exp:'2{a} − {b} = ('+N(2*a1)+' − '+P(b1)+'; '+N(2*a2)+' − '+P(b2)+') = '+C(sx,sy)+', довжина √('+tr[0]+'² + '+tr[1]+'²) = '+tr[2]+'.'});
+
+    out.forEach(function(t){
+      if(t.type==='choice'){
+        var o=t.opts.map(function(x,i){return {x:x,ok:i===t.ans}});
+        for(var j=o.length-1;j>0;j--){var r=Math.floor(rnd()*(j+1));var tmp=o[j];o[j]=o[r];o[r]=tmp}
+        t.order=o;
+      }
+    });
+    return out;
+  }
+
+  // 40 завдань: по 10 на рівень, добираються з трьох незалежних наборів випадкових варіантів
+  function build(seed){
+    var rs=(seed^0x9E3779B9)>>>0;
+    var rnd=function(){rs|=0;rs=rs+0x6D2B79F5|0;var t=Math.imul(rs^rs>>>15,1|rs);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296};
+    var pool={1:[],2:[],3:[],4:[]},seen={};
+    [0,1,2].forEach(function(p){buildOnce(seed+p*104729).forEach(function(t){
+      if(seen[t.q])return;seen[t.q]=1;pool[t.lv].push(t)})});
+    var out=[];
+    [1,2,3,4].forEach(function(l){
+      var a=pool[l];
+      for(var j=a.length-1;j>0;j--){var r=Math.floor(rnd()*(j+1));var tmp=a[j];a[j]=a[r];a[r]=tmp}
+      out=out.concat(a.slice(0,10));
+    });
+    return out;
+  }
+
+  var CHEAT=[
+    ['Координати','{AB} = (x₂ − x₁; y₂ − y₁)'],
+    ['Довжина','|{a}| = √(x² + y²)'],
+    ['Сума','{a} + {b} = (x₁ + x₂; y₁ + y₂)'],
+    ['Різниця','{a} − {b} = (x₁ − x₂; y₁ − y₂)'],
+    ['Множення на число','k{a} = (kx; ky), |k{a}| = |k|·|{a}|'],
+    ['Скалярний добуток','{a}·{b} = x₁x₂ + y₁y₂ = |{a}|·|{b}|·cos α'],
+    ['Перпендикулярність','{a} ⊥ {b} ⇔ {a}·{b} = 0'],
+    ['Кут між векторами','cos α = ({a}·{b}) / (|{a}|·|{b}|)']
+  ];
+
+  var KEY='vektory-trenazher-v4';
+  var res={}, cur=0, tries={}, shownHint={}, picked={}, seed=Math.floor(Math.random()*4e9);
+  try{var s0=JSON.parse(localStorage.getItem(KEY)||'{}'); if(s0&&typeof s0.seed==='number'){seed=s0.seed;res=s0.res||{};if(typeof s0.cur==='number')cur=s0.cur;}}catch(e){}
+  function save(){try{localStorage.setItem(KEY,JSON.stringify({res:res,cur:cur,seed:seed}))}catch(e){}}
+  T=build(seed);
+  function fresh(){seed=Math.floor(Math.random()*4e9);res={};tries={};shownHint={};picked={};cur=0;T=build(seed);save();render()}
+
+  var $=function(id){return document.getElementById(id)};
+  $('cheat').innerHTML=CHEAT.map(function(c){return '<div><div class="h">'+c[0]+'</div>'+fmt(c[1])+'</div>'}).join('');
+
+  function parse(v){
+    var s=String(v).replace(/\s/g,'').replace(',','.').replace(/[−–—]/g,'-');
+    if(s===''||!/^-?\d*\.?\d+$/.test(s))return NaN;
+    return Number(s);
+  }
+  var close=function(a,b){return Math.abs(a-b)<0.011};
+  var fmtNum=function(n){return String(n).replace('-','−').replace('.',',')};
+
+  function renderTop(){
+    var solved=0,first=0;
+    T.forEach(function(t,i){var r=res[i]; if(r){solved++; if(r==='first')first++;}});
+    $('stats').innerHTML='Розв’язано: <b>'+solved+'</b> з '+T.length+' · З першої спроби: <b>'+first+'</b>';
+    $('levels').innerHTML=LEVELS.map(function(l){
+      var idx=[],d=0;T.forEach(function(t,i){if(t.lv===l.id){idx.push(i);if(res[i])d++}});
+      return '<button class="lv" data-lv="'+l.id+'" aria-current="'+(T[cur].lv===l.id)+'"><span class="t">'+l.name+'</span></button>';
+    }).join('');
+    var h='',prev=0;
+    T.forEach(function(t,i){
+      if(prev&&t.lv!==prev)h+='<span class="gap"></span>';prev=t.lv;
+      h+='<button class="dot '+(res[i]||'')+(i===cur?' cur':'')+'" data-i="'+i+'" aria-label="Завдання '+(i+1)+'"></button>';
+    });
+    var all=Object.keys(res).length===T.length;
+    $('final').innerHTML=all?'<div class="done"><h2>Тренажер пройдено</h2>З першої спроби правильно: '+first+' із '+T.length+'. '+(first>=34?'Відмінний результат.':first>=24?'Добре, повторіть ті завдання, де були помилки.':'Подивіться шпаргалку й пройдіть завдання ще раз.')+' <button class="b" id="reset" style="margin-left:6px">Нові варіанти</button></div>':'';
+    if(all)$('reset').onclick=fresh;
+  }
+
+  function render(){
+    var t=T[cur],r=res[cur],locked=!!r,h='';
+    h+='<div class="meta"><span>'+LEVELS[t.lv-1].name+'</span></div>';
+    h+='<p class="q">'+fmt(t.q)+'</p>';
+    if(t.type==='choice'){
+      h+='<div class="opts">'+t.order.map(function(o,k){
+        var c='opt';
+        if(locked&&o.ok)c+=' good';else if(picked[cur]===k)c+=locked?' bad':' sel';
+        return '<button class="'+c+'" data-k="'+k+'"'+(locked?' disabled':'')+'><span class="k">'+'АБВГ'[k]+'</span><span>'+fmt(o.x)+'</span></button>';
+      }).join('')+'</div>';
+    }else if(t.type==='num'){
+      h+='<div class="ans"><span class="lbl">Відповідь:</span><input id="a0" inputmode="decimal" autocomplete="off" aria-label="Відповідь"'+(locked?' disabled value="'+fmtNum(t.ans)+'" class="good"':'')+'></div>';
+    }else{
+      h+='<div class="ans"><span class="lbl">Відповідь:</span><span class="sep">(</span><input id="a0" inputmode="decimal" autocomplete="off" aria-label="x"'+(locked?' disabled value="'+fmtNum(t.ans[0])+'" class="good"':'')+'><span class="sep">;</span><input id="a1" inputmode="decimal" autocomplete="off" aria-label="y"'+(locked?' disabled value="'+fmtNum(t.ans[1])+'" class="good"':'')+'><span class="sep">)</span></div>';
+    }
+    h+='<div id="fb"></div>';
+    h+='<div class="btns">';
+    if(!locked){h+='<button class="b main" id="check">Перевірити</button><button class="b" id="hint">Підказка</button>';
+      if((tries[cur]||0)>=2)h+='<button class="b" id="show">Показати відповідь</button>';}
+    h+='<button class="b" id="prev"'+(cur===0?' disabled':'')+'>Назад</button><button class="b'+(locked?' main':'')+'" id="next"'+(cur===T.length-1?' disabled':'')+'>Далі</button></div>';
+    $('card').innerHTML=h;
+    if(locked)showExp(r);
+    else if(shownHint[cur])$('fb').innerHTML='<div class="fb hint"><b>Підказка</b>'+fmt(t.hint)+'</div>';
+    bind();renderTop();
+  }
+
+  function showExp(r){
+    var t=T[cur];
+    $('fb').innerHTML='<div class="fb '+(r==='shown'?'no':'ok')+'"><b>'+(r==='first'?'Правильно!':r==='later'?'Правильно, але не з першої спроби.':'Правильна відповідь показана.')+'</b><span class="exp">'+fmt(t.exp)+'</span></div>';
+  }
+
+  function finish(state){res[cur]=state;save();render()}
+
+  function bind(){
+    var t=T[cur];
+    var q=function(id){return $(id)};
+    if(q('next'))q('next').onclick=function(){if(cur<T.length-1){cur++;save();render()}};
+    if(q('prev'))q('prev').onclick=function(){if(cur>0){cur--;save();render()}};
+    if(q('hint'))q('hint').onclick=function(){shownHint[cur]=true;$('fb').innerHTML='<div class="fb hint"><b>Підказка</b>'+fmt(t.hint)+'</div>'};
+    if(q('show'))q('show').onclick=function(){finish('shown')};
+    if(res[cur])return;
+    if(t.type==='choice'){
+      Array.prototype.forEach.call(document.querySelectorAll('.opt'),function(b){
+        b.onclick=function(){
+          var k=+b.getAttribute('data-k'),ok=t.order[k].ok;picked[cur]=k;
+          if(ok){finish(tries[cur]?'later':'first')}
+          else{tries[cur]=(tries[cur]||0)+1;render();
+            $('fb').innerHTML='<div class="fb no"><b>Не зовсім.</b>Спробуйте інший варіант'+(shownHint[cur]?'.':' або натисніть «Підказка».')+'</div>';
+            document.querySelectorAll('.opt')[k].className='opt bad';}
+        };
+      });
+      if(q('check'))q('check').style.display='none';
+    }else{
+      var chk=function(){
+        var v0=parse(q('a0').value),v1=t.type==='pair'?parse(q('a1').value):0;
+        if(isNaN(v0)||isNaN(v1)){$('fb').innerHTML='<div class="fb hint"><b>Введіть число.</b>Можна з комою або крапкою, від’ємні — зі знаком мінус.</div>';return}
+        var ok=t.type==='pair'?(close(v0,t.ans[0])&&close(v1,t.ans[1])):close(v0,t.ans);
+        if(ok)finish(tries[cur]?'later':'first');
+        else{tries[cur]=(tries[cur]||0)+1;render();
+          ['a0','a1'].forEach(function(id){if(q(id)){q(id).className='bad'}});
+          $('fb').innerHTML='<div class="fb no"><b>Не зовсім.</b>Перевірте обчислення'+(shownHint[cur]?'.':' або натисніть «Підказка».')+'</div>'}
+      };
+      q('check').onclick=chk;
+      ['a0','a1'].forEach(function(id){if(q(id))q(id).onkeydown=function(e){if(e.key==='Enter')chk()}});
+    }
+  }
+
+  $('levels').onclick=function(e){var b=e.target.closest('.lv');if(!b)return;var l=+b.getAttribute('data-lv');
+    for(var i=0;i<T.length;i++){if(T[i].lv===l&&!res[i]){cur=i;break}if(T[i].lv===l&&cur<i&&T[cur].lv!==l){cur=i}}
+    if(T[cur].lv!==l){for(var j=0;j<T.length;j++)if(T[j].lv===l){cur=j;break}}
+    save();render()};
+
+  if(cur<0||cur>=T.length)cur=0;
+  render();
+})();
+</script>
+
+</body></html>
